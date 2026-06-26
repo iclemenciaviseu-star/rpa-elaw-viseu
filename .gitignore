@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# Instalacao local
+.instalado
+.instalado_local
+
+# Relatorios gerados
+ELAW_RPA_Relatorios/
+
+# Variaveis de ambiente
+.env
+.env.local
+
+# Playwright
+playwright-report/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs e ficheiros temporarios
+server_log.txt
+server_err.txt
+codigo_para_revisao.txt
+
+# Script auxiliar local
+atualizar_github.bat

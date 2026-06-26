@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELAW · Automação de Processos</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #111827;
+  color: #e0e0e0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.app-wrap {
+  background: #1a2236;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 780px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+}
+.app-header {
+  background: #0f1d35;
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.app-logo {
+  width: 40px; height: 40px;
+  background: #3b82f6;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: #fff;
+}
+.app-title { font-size: 16px; font-weight: 600; color: #fff; }
+.app-subtitle { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+/* Steps bar */
+.steps-bar {
+  display: flex;
+  align-items: center;
+  padding: 20px 28px 0;
+}
+.step-node {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600;
+  border: 2px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.step-node.active { border-color: #3b82f6; background: #3b82f6; color: #fff; }
+.step-node.done { border-color: #22c55e; background: #22c55e; color: #fff; }
+.step-line {
+  flex: 1; height: 2px;
+  background: rgba(255,255,255,0.1);
+  transition: background 0.4s;
+}
+.step-line.done { background: #22c55e; }
+.step-line.active { background: #3b82f6; }
+
+/* Content */
+.content { padding: 24px 28px 28px; min-height: 420px; }
+.step-panel { display: none; animation: fadeIn 0.22s ease; }
+.step-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.step-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  color: #3b82f6; text-transform: uppercase; margin-bottom: 6px;
+}
+.step-heading { font-size: 22px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+.step-desc { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 22px; line-height: 1.55; }
+
+/* Activity cards */
+.activity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.activity-card {
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 18px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.02);
+  position: relative;
+}
+.activity-card:hover { border-color: rgba(59,130,246,0.5); background: rgba(59,130,246,0.05); }
+.activity-card.selected { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+.act-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 10px;
+}
+.act-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.act-desc { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.4; }
+.check-badge {
+  position: absolute; top: 10px; right: 10px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #3b82f6;
+  display: none; align-items: center; justify-content: center;
+  font-size: 10px; color: #fff;
+}
+.activity-card.selected .check-badge { display: flex; }
+
+/* File picker */
+.drop-zone {
+  border: 2px dashed rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 16px;
+}
+.drop-zone:hover { border-color: #3b82f6; background: rgba(59,130,246,0.06); }
+.drop-icon { font-size: 28px; margin-bottom: 8px; }
+.drop-main { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.drop-sub { font-size: 12px; color: rgba(255,255,255,0.4); }
+.file-info {
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px; color: #22c55e;
+  display: none; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+
+/* Form */
+.field-label {
+  display: block;
+  font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+input[type=text], input[type=password], select, textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 16px;
+  font-family: inherit;
+}
+input:focus, select:focus { border-color: #3b82f6; }
+select option { background: #1a2236; color: #fff; }
+.field-hint { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: -12px; margin-bottom: 16px; line-height: 1.5; }
+
+/* Section box */
+.fields-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.fields-section-title {
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  margin-bottom: 14px;
+}
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-row input { margin-bottom: 0; }
+
+/* Radio */
+.radio-group { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.radio-opt {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px; color: rgba(255,255,255,0.7);
+  user-select: none;
+}
+.radio-opt input { display: none; }
+.radio-opt.selected { border-color: #3b82f6; background: rgba(59,130,246,0.12); color: #fff; }
+.radio-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.radio-opt.selected .radio-dot { border-color: #3b82f6; background: #3b82f6; }
+.radio-opt.selected .radio-dot::after {
+  content: ''; display: block;
+  width: 5px; height: 5px; border-radius: 50%; background: #fff;
+}
+
+/* Note */
+.note-box {
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12px; color: rgba(251,191,36,0.9);
+  margin-bottom: 16px; line-height: 1.5;
+}
+
+/* Footer */
+.footer-nav {
+  padding: 16px 28px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  display: flex; justify-content: space-between; align-items: center;
+  background: #0f1d35;
+}
+.btn {
+  padding: 10px 22px; border-radius: 8px;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; border: none;
+  transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); }
+.btn-ghost:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-primary:disabled { background: rgba(59,130,246,0.35); cursor: not-allowed; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+
+/* Execution screen */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+.metric-card { background: #0f1d35; border-radius: 10px; padding: 14px 16px; }
+.metric-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.35); text-transform: uppercase; margin-bottom: 6px;
+}
+.metric-value { font-size: 24px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.metric-value.green { color: #22c55e; }
+.metric-value.red { color: #ef4444; }
+.metric-value.blue { color: #60a5fa; }
+
+.progress-bar-wrap { background: rgba(255,255,255,0.08); border-radius: 4px; height: 4px; margin-bottom: 18px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: #3b82f6; border-radius: 4px; transition: width 0.5s ease; width: 0%; }
+
+.exec-table-wrap { border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; max-height: 260px; overflow-y: auto; }
+.exec-table-wrap::-webkit-scrollbar { width: 6px; }
+.exec-table-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+.exec-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.exec-table thead th {
+  background: #0f1d35; padding: 10px 14px;
+  text-align: left; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4); position: sticky; top: 0; z-index: 1;
+}
+.exec-table tbody tr { border-top: 1px solid rgba(255,255,255,0.05); }
+.exec-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.exec-table tbody td { padding: 9px 14px; color: rgba(255,255,255,0.75); font-size: 12px; }
+.exec-table tbody td.id-cell { font-family: 'Consolas', monospace; color: #93c5fd; }
+.exec-table tbody td.detail-cell {
+  color: rgba(255,255,255,0.45); font-size: 11px;
+  max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.exec-table tbody td.num-cell { color: rgba(255,255,255,0.3); }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+}
+.status-badge.ok { background: rgba(34,197,94,0.15); color: #22c55e; }
+.status-badge.error { background: rgba(239,68,68,0.15); color: #ef4444; }
+.status-badge.running { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.status-badge.skip { background: rgba(251,191,36,0.15); color: #fbbf24; }
+
+.dot-pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+.log-toggle {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 10px 14px;
+  cursor: pointer; margin-top: 12px;
+  font-size: 12px; color: rgba(255,255,255,0.45);
+  user-select: none; transition: background 0.2s;
+}
+.log-toggle:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.8); }
+.log-area {
+  display: none; background: #0a0f1a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px; padding: 12px; margin-top: 8px;
+  max-height: 130px; overflow-y: auto;
+  font-family: 'Consolas', monospace; font-size: 11px;
+  color: rgba(255,255,255,0.45); line-height: 1.6;
+}
+.log-area.open { display: block; }
+
+.summary-hero { text-align: center; padding: 12px 0 20px; }
+.summary-icon { font-size: 44px; margin-bottom: 10px; }
+.summary-title { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.summary-subtitle { font-size: 13px; color: rgba(255,255,255,0.4); }
+.summary-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+.summary-stat { background: #0f1d35; border-radius: 10px; padding: 16px; text-align: center; }
+.summary-stat .s-val { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.summary-stat .s-lbl { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.07em; }
+.dl-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 8px; padding: 12px; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: #60a5fa;
+  transition: all 0.2s; margin-bottom: 8px;
+}
+.dl-btn:hover { background: rgba(59,130,246,0.22); }
+
+/* Upload de documentos */
+.doc-drop {
+  border: 2px dashed rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 10px;
+}
+.doc-drop:hover { border-color: #3b82f6; background: rgba(59,130,246,0.05); }
+
+.conn-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: rgba(255,255,255,0.35);
+  margin-left: auto;
+}
+.conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; }
+.conn-dot.ok { background: #22c55e; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app-wrap">
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="app-logo">EL</div>
+    <div>
+      <div class="app-title">ELAW · Automação de Processos</div>
+      <div class="app-subtitle">viseuadv.elawio.com.br</div>
+    </div>
+    <div class="conn-badge" id="connBadge" style="margin-left:auto">
+      <div class="conn-dot" id="connDot"></div>
+      <span id="connLabel">conectando...</span>
+    </div>
+  </div>
+
+  <!-- Steps bar -->
+  <div class="steps-bar">
+    <div class="step-node active" id="sn1">1</div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step-node" id="sn2">2</div>
+    <div class="step-line" id="sl2"></div>
+    <div class="step-node" id="sn3">3</div>
+    <div class="step-line" id="sl3"></div>
+    <div class="step-node" id="sn4">4</div>
+    <div class="step-line" id="sl4"></div>
+    <div class="step-node" id="sn5">5</div>
+  </div>
+
+  <div class="content">
+
+    <!-- Step 1 — Atividade -->
+    <div class="step-panel active" id="panel1">
+      <div class="step-tag">Passo 1 de 5</div>
+      <div class="step-heading">Selecione a atividade</div>
+      <div class="step-desc">Escolha o tipo de operação que será executada nas pastas do ELAW.</div>
+      <div class="activity-grid">
+        <div class="activity-card" onclick="selectActivity('capa')" id="card-capa">
+          <div class="act-icon" style="background:rgba(59,130,246,0.15)">📋</div>
+          <div class="check-badge">✓</div>
+          <div class="act-title">Ajuste de Capa</div>
+          <div class="act-desc">Edita campos cadastrais na aba Geral da pasta</div>
+        </div>
+        <div class="activity-card" onclick="selectActivity('prazos')" id="card-prazos">
+          <div class="act-icon" style="background:rgba(251,191,36,0.15)">📅</div>
+          <div class="check-badge">✓</div>
+          <div class="act-title">Prazos</div>
+          <div class="act-desc">Reagenda datas de prazo interno ou fatal</div>
+        </div>
+        <div class="activity-card" onclick="selectActivity('pedidos')" id="card-pedidos">
+          <div class="act-icon" style="background:rgba(34,197,94,0.15)">💼</div>
+          <div class="check-badge">✓</div>
+          <div class="act-title">Pedidos</div>
+          <div class="act-desc">Cria ou edita pedidos na aba de pedidos</div>
+        </div>
+        <div class="activity-card" onclick="selectActivity('documentos')" id="card-documentos">
+          <div class="act-icon" style="background:rgba(168,85,247,0.15)">📁</div>
+          <div class="check-badge">✓</div>
+          <div class="act-title">Documentos</div>
+          <div class="act-desc">Upload ou download de documentos da pasta</div>
+        </div>
+        <div class="activity-card" onclick="selectActivity('marcacao')" id="card-marcacao">
+          <div class="act-icon" style="background:rgba(244,63,94,0.15)">🏷️</div>
+          <div class="check-badge">✓</div>
+          <div class="act-title">Marcações</div>
+          <div class="act-desc">Adiciona etiquetas (Crítico, Estratégico…) à pasta</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 — Planilha -->
+    <div class="step-panel" id="panel2">
+      <div class="step-tag">Passo 2 de 5</div>
+      <div class="step-heading">Base de IDs</div>
+      <div class="step-desc">Carregue a planilha com os IDs das pastas. O <strong style="color:#fff">ID da pasta</strong> deve estar na coluna A. Cabeçalho é detectado automaticamente.</div>
+
+      <input type="file" id="spreadsheetInput" accept=".xlsx,.xlsm,.csv,.tsv" style="display:none" onchange="handleSpreadsheetFile(this.files[0])">
+      <div class="drop-zone" onclick="document.getElementById('spreadsheetInput').click()">
+        <div class="drop-icon">📂</div>
+        <div class="drop-main">Clique para selecionar o arquivo</div>
+        <div class="drop-sub">.xlsx · .csv · .tsv</div>
+      </div>
+
+      <div class="file-info" id="fileInfo">
+        <span>✅</span>
+        <span id="fileInfoText">arquivo carregado</span>
+      </div>
+
+      <div id="previewWrap" class="hidden">
+        <div style="font-size:11px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Prévia dos IDs (primeiros 5)</div>
+        <div id="previewIds" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+
+    <!-- Step 3 — Configuração -->
+    <div class="step-panel" id="panel3">
+
+      <!-- CAPA -->
+      <div id="cfg-capa" class="hidden">
+        <div class="step-tag">Passo 3 de 5</div>
+        <div class="step-heading">Configurar · Ajuste de Capa</div>
+        <div class="step-desc">Informe quantos campos serão editados. Para cada campo indique o nome, o valor fixo a inserir (ou a coluna da planilha que contém esse valor).</div>
+
+        <label class="field-label">Quantos campos serão editados?</label>
+        <select id="numCampos" onchange="renderCampos()">
+          <option value="1">1 campo</option>
+          <option value="2">2 campos</option>
+          <option value="3">3 campos</option>
+          <option value="4">4 campos</option>
+          <option value="5">5 campos</option>
+          <option value="6">6 campos</option>
+          <option value="7">7 campos</option>
+          <option value="8">8 campos</option>
+          <option value="9">9 campos</option>
+          <option value="10">10 campos</option>
+        </select>
+        <div id="camposWrap"></div>
+      </div>
+
+      <!-- PRAZOS -->
+      <div id="cfg-prazos" class="hidden">
+        <div class="step-tag">Passo 3 de 5</div>
+        <div class="step-heading">Configurar · Prazos</div>
+        <div class="step-desc">Configure qual agendamento será ajustado, o tipo de prazo e a coluna da planilha que contém a nova data.</div>
+
+        <label class="field-label">Nome exato do subtipo de agendamento</label>
+        <input type="text" id="subtipoPrazo" placeholder="Ex: Audiência Inicial">
+        <div class="field-hint">⚠ Digite exatamente como aparece no sistema. Apenas 1 agendamento por rodada.</div>
+
+        <label class="field-label">Qual prazo ajustar?</label>
+        <div class="radio-group" id="rgPrazoTipo">
+          <label class="radio-opt selected" onclick="setRadio('rgPrazoTipo',this)">
+            <input type="radio" name="prazoTipo" value="prazoInterno" checked>
+            <span class="radio-dot"></span> Prazo Interno
+          </label>
+          <label class="radio-opt" onclick="setRadio('rgPrazoTipo',this)">
+            <input type="radio" name="prazoTipo" value="prazoFatal">
+            <span class="radio-dot"></span> Prazo Fatal
+          </label>
+        </div>
+
+        <label class="field-label">Coluna da planilha com a nova data</label>
+        <input type="text" id="colunaData" placeholder="Ex: B">
+        <div class="field-hint">Indique a letra da coluna. Formato esperado na planilha: dd/mm/aaaa</div>
+      </div>
+
+      <!-- PEDIDOS -->
+      <div id="cfg-pedidos" class="hidden">
+        <div class="step-tag">Passo 3 de 5</div>
+        <div class="step-heading">Configurar · Pedidos</div>
+        <div class="step-desc">Defina se os pedidos serão criados ou editados e mapeie as colunas.</div>
+
+        <label class="field-label">Operação</label>
+        <div class="radio-group" id="rgPedidoOp">
+          <label class="radio-opt selected" onclick="setRadio('rgPedidoOp',this); togglePedidoOp('criar')">
+            <input type="radio" name="pedidoOp" value="criar" checked>
+            <span class="radio-dot"></span> Criar pedido
+          </label>
+          <label class="radio-opt" onclick="setRadio('rgPedidoOp',this); togglePedidoOp('editar')">
+            <input type="radio" name="pedidoOp" value="editar">
+            <span class="radio-dot"></span> Editar pedido existente
+          </label>
+        </div>
+
+        <div id="pedidoEditarCfg" class="hidden">
+          <div class="fields-section" style="margin-bottom:14px;">
+            <div class="fields-section-title">Substituição de pedido (DE → PARA)</div>
+            <label class="field-label">DE — Nome atual do pedido no sistema</label>
+            <input type="text" id="pedidoDe" placeholder="Ex: Total de Pedido">
+            <div class="field-hint" style="margin-top:-12px;margin-bottom:14px;">⚠ Digite exatamente como aparece no sistema.</div>
+            <label class="field-label">PARA — Novo nome/tipo do pedido</label>
+            <input type="text" id="pedidoPara" placeholder="Ex: Danos Morais" style="margin-bottom:0;">
+          </div>
+        </div>
+
+        <div class="note-box" id="notePedidoCriar">
+          📌 Para criação, a planilha deve conter as colunas mapeadas abaixo: Tipo de Pedido, Valor, Data, Valor a Provisionar, Risco e Data Base de Juros.
+        </div>
+
+        <div class="fields-section">
+          <div class="fields-section-title">Mapeamento de colunas da planilha</div>
+          <div class="field-row" style="margin-bottom:12px;">
+            <div>
+              <label class="field-label">Tipo de Pedido</label>
+              <input type="text" id="colTipoPedido" placeholder="Coluna B" style="margin-bottom:0">
+            </div>
+            <div>
+              <label class="field-label">Valor do Pedido</label>
+              <input type="text" id="colValorPedido" placeholder="Coluna C" style="margin-bottom:0">
+            </div>
+          </div>
+          <div class="field-row" style="margin-bottom:12px;">
+            <div>
+              <label class="field-label">Data do Pedido</label>
+              <input type="text" id="colDataPedido" placeholder="Coluna D" style="margin-bottom:0">
+            </div>
+            <div>
+              <label class="field-label">Valor a Provisionar</label>
+              <input type="text" id="colValorProv" placeholder="Coluna E" style="margin-bottom:0">
+            </div>
+          </div>
+          <div class="field-row">
+            <div>
+              <label class="field-label">Risco</label>
+              <input type="text" id="colRisco" placeholder="Coluna F" style="margin-bottom:0">
+            </div>
+            <div>
+              <label class="field-label">Data Base Cálculo Juros</label>
+              <input type="text" id="colDataJuros" placeholder="Coluna G" style="margin-bottom:0">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTOS -->
+      <div id="cfg-documentos" class="hidden">
+        <div class="step-tag">Passo 3 de 5</div>
+        <div class="step-heading">Configurar · Documentos</div>
+        <div class="step-desc">Defina o tipo de operação que será realizada nos documentos das pastas.</div>
+
+        <label class="field-label">Operação</label>
+        <div class="radio-group" id="rgDocOp">
+          <label class="radio-opt selected" onclick="setRadio('rgDocOp',this)">
+            <input type="radio" name="docOp" value="upload" checked>
+            <span class="radio-dot"></span> Upload (importar documentos)
+          </label>
+          <label class="radio-opt" onclick="setRadio('rgDocOp',this)">
+            <input type="radio" name="docOp" value="download">
+            <span class="radio-dot"></span> Download (exportar documentos)
+          </label>
+        </div>
+      </div>
+
+      <!-- MARCACOES -->
+      <div id="cfg-marcacao" class="hidden">
+        <div class="step-tag">Passo 3 de 5</div>
+        <div class="step-heading">Configurar · Marcações</div>
+        <div class="step-desc">Selecione as etiquetas que serão <strong style="color:#fff">adicionadas</strong> a todas as pastas da planilha. As etiquetas que já existirem na pasta são preservadas — o robô nunca desmarca.</div>
+
+        <div class="fields-section">
+          <div class="fields-section-title">Etiquetas a incluir</div>
+          <div id="marcacaoChecks" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.02);"><input type="checkbox" value="Advogado Agressor" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;flex:0 0 auto;"><span>Advogado Agressor</span></label>
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.02);"><input type="checkbox" value="Encerrado Judicialmente" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;flex:0 0 auto;"><span>Encerrado Judicialmente</span></label>
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.02);"><input type="checkbox" value="Crítico" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;flex:0 0 auto;"><span>Crítico</span></label>
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.02);"><input type="checkbox" value="Estratégico" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;flex:0 0 auto;"><span>Estratégico</span></label>
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.02);"><input type="checkbox" value="Medicina" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;flex:0 0 auto;"><span>Medicina</span></label>
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.02);"><input type="checkbox" value="Sensível" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;flex:0 0 auto;"><span>Sensível</span></label>
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.02);"><input type="checkbox" value="Honorários Especiais" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;flex:0 0 auto;"><span>Honorários Especiais</span></label>
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.02);"><input type="checkbox" value="Execução em outro ID" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;flex:0 0 auto;"><span>Execução em outro ID</span></label>
+          </div>
+          <div class="field-hint" style="margin-top:10px;margin-bottom:0;">Pode marcar mais de uma. Os nomes são exatamente como aparecem na tela de Marcações do eLaw.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Step 4 — Credenciais + config documentos -->
+    <div class="step-panel" id="panel4">
+
+      <!-- Documentos: Upload — arquivos e tipo (visível apenas para documentos+upload) -->
+      <div id="p4DocUpload" class="hidden">
+        <div class="step-tag">Passo 4 de 5</div>
+        <div class="step-heading">Configurar · Upload de Documentos</div>
+        <div class="step-desc">Selecione os arquivos e informe o tipo de documento no sistema.</div>
+        <div class="fields-section" style="margin-bottom:18px;">
+          <div class="fields-section-title">Arquivos para upload</div>
+          <div class="note-box" style="margin-bottom:12px;">
+            📌 Nomeie cada arquivo com o ID da pasta correspondente (ex: <strong>12345.pdf</strong>). Vários arquivos por pasta são aceitos.
+          </div>
+          <input type="file" id="docFilesInput" multiple style="display:none" onchange="handleDocFiles(this.files)">
+          <div class="doc-drop" onclick="document.getElementById('docFilesInput').click()">
+            <div style="font-size:22px;margin-bottom:6px;">📎</div>
+            <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:4px;">Clique para selecionar arquivos</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.35);">Qualquer formato aceito</div>
+          </div>
+          <div class="file-info" id="docFilesInfo" style="margin-bottom:10px;">
+            <span>✅</span><span id="docFilesText">arquivos carregados</span>
+          </div>
+          <label class="field-label" style="margin-top:4px;">Tipo/categoria do documento no sistema</label>
+          <input type="text" id="tipoDocumento" placeholder="Ex: Petição Inicial" style="margin-bottom:0;">
+        </div>
+      </div>
+
+      <!-- Documentos: Download — prioridades (visível apenas para documentos+download) -->
+      <div id="p4DocDownload" class="hidden">
+        <div class="step-tag">Passo 4 de 5</div>
+        <div class="step-heading">Prioridades de Download</div>
+        <div class="step-desc">Liste os tipos de documentos em ordem de prioridade, um por linha. O robô baixará o primeiro que encontrar em cada pasta.</div>
+        <div class="fields-section" style="margin-bottom:18px;">
+          <div class="fields-section-title">Lista de prioridades (do mais ao menos prioritário)</div>
+          <textarea id="prioridadesDownload" rows="7" style="resize:vertical;">Petição Inicial
+Contestação
+Habilitação
+Notificação
+Inicial
+Petição</textarea>
+          <div class="field-hint" style="margin-top:-8px;">O robô verifica cada linha em ordem e baixa o primeiro documento cujo tipo ou nome contenha o texto informado.</div>
+        </div>
+      </div>
+
+      <!-- Login — header completo para atividades sem config extra -->
+      <div id="p4LoginFull">
+        <div class="step-tag">Passo 4 de 5</div>
+        <div class="step-heading">Acesso ao ELAW</div>
+        <div class="step-desc">Informe suas credenciais de acesso ao sistema. Os dados são usados apenas para autenticar a sessão automatizada e não são armazenados.</div>
+      </div>
+      <!-- Login — sub-header compacto usado abaixo da config de documentos -->
+      <div id="p4LoginCompact" class="hidden">
+        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.07em;margin:4px 0 14px;border-top:1px solid rgba(255,255,255,0.07);padding-top:16px;">Acesso ao ELAW</div>
+      </div>
+
+      <label class="field-label">E-mail / Usuário</label>
+      <input type="text" id="loginUser" placeholder="seu@email.com.br"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+      <label class="field-label">Senha</label>
+      <input type="password" id="loginPass" placeholder="••••••••"
+             autocomplete="new-password">
+
+      <div class="note-box">
+        🔒 As credenciais são enviadas ao servidor apenas para autenticar a sessão no ELAW e não são gravadas em disco.
+      </div>
+    </div>
+
+    <!-- Step 5 — Execução -->
+    <div class="step-panel" id="panel5">
+      <div class="step-tag">Passo 5 de 5</div>
+      <div class="step-heading" id="execHeading">Executando...</div>
+      <div class="step-desc">Acompanhe o progresso em tempo real. Cada caso aparece na tabela abaixo conforme é processado.</div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total</div>
+          <div class="metric-value blue" id="mTotal">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Sucesso</div>
+          <div class="metric-value green" id="mOk">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Erros</div>
+          <div class="metric-value red" id="mErr">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Tempo</div>
+          <div class="metric-value" id="mTime">00:00</div>
+        </div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+
+      <div class="exec-table-wrap">
+        <table class="exec-table">
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th>ID da Pasta</th>
+              <th style="width:110px">Status</th>
+              <th>Detalhe</th>
+            </tr>
+          </thead>
+          <tbody id="execTbody"></tbody>
+        </table>
+      </div>
+
+      <div class="log-toggle" onclick="toggleLog()">
+        <span id="logArrow">▶</span> Ver log bruto
+      </div>
+      <div class="log-area" id="logArea"></div>
+
+      <!-- Painel: tela atual do robô (atualiza a cada pasta processada) -->
+      <div id="livePanel" style="display:none;margin-top:12px;border:1px solid rgba(100,200,255,0.25);border-radius:10px;padding:12px;background:rgba(100,200,255,0.04);">
+        <div style="font-size:11px;font-weight:600;color:rgba(100,200,255,0.9);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">🖥️ Tela atual do robô</div>
+        <div id="liveInfo" style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:8px;">Aguardando primeiro caso...</div>
+        <img id="liveImg" style="width:100%;border-radius:6px;border:1px solid rgba(100,200,255,0.15);" src="" alt="tela atual">
+      </div>
+
+      <!-- Painel: captura de tela do erro (aparece somente quando há falha) -->
+      <div id="screenshotPanel" style="display:none;margin-top:12px;">
+        <div style="font-size:11px;font-weight:600;color:rgba(255,165,0,0.8);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">📸 Captura de tela do erro</div>
+        <div id="screenshotInfo" style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px;"></div>
+        <img id="screenshotImg" style="width:100%;border-radius:8px;border:1px solid rgba(255,255,255,0.1);" src="" alt="screenshot">
+      </div>
+
+      <div id="summaryPanel" class="hidden" style="margin-top:20px;">
+        <div class="summary-hero">
+          <div class="summary-icon" id="summaryIcon">✅</div>
+          <div class="summary-title" id="summaryTitle">Processamento concluído!</div>
+          <div class="summary-subtitle" id="summarySubtitle">Todos os registros foram processados.</div>
+        </div>
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <div class="s-val blue" id="sFinal">0</div>
+            <div class="s-lbl">Total</div>
+          </div>
+          <div class="summary-stat">
+            <div class="s-val green" id="sOkFinal">0</div>
+            <div class="s-lbl">Sucesso</div>
+          </div>
+          <div class="summary-stat">
+            <div class="s-val red" id="sErrFinal">0</div>
+            <div class="s-lbl">Erros</div>
+          </div>
+        </div>
+        <div class="dl-btn" onclick="downloadReport()">📥 Baixar relatório .xlsx</div>
+        <div class="dl-btn hidden" id="dlDocsBtn" onclick="downloadDocs()" style="background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.3);color:#c084fc;">
+          📦 Baixar documentos (.zip)
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Footer nav -->
+  <div class="footer-nav" id="footerNav">
+    <button class="btn btn-ghost" id="btnBack" style="display:none" onclick="goBack()">← Voltar</button>
+    <div></div>
+    <button class="btn btn-primary" id="btnNext" onclick="goNext()">Próximo →</button>
+  </div>
+
+</div>
+
+<script>
+// ── Session & WebSocket ───────────────────────────────────────────────────
+let ws = null;
+let sessionId = null;
+let wsReady = false;
+
+async function initSession() {
+  try {
+    const res = await fetch('/api/session', { method: 'POST' });
+    const data = await res.json();
+    sessionId = data.session_id;
+    connectWS();
+  } catch (e) {
+    setConn(false);
+    console.error('Falha ao criar sessão:', e);
+    setTimeout(initSession, 3000);
+  }
+}
+
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws/${sessionId}`);
+  ws.onopen = () => {
+    wsReady = true;
+    setConn(true);
+    // Heartbeat a cada 25s para evitar idle timeout do Render (free tier mata em ~5min)
+    if (window._wsHeartbeat) clearInterval(window._wsHeartbeat);
+    window._wsHeartbeat = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try { ws.send(JSON.stringify({type: 'ping'})); } catch(_) {}
+      }
+    }, 25000);
+  };
+  ws.onclose = () => {
+    wsReady = false;
+    setConn(false);
+    if (window._wsHeartbeat) { clearInterval(window._wsHeartbeat); window._wsHeartbeat = null; }
+    setTimeout(connectWS, 3000);
+  };
+  ws.onerror = () => { wsReady = false; setConn(false); };
+  ws.onmessage = (e) => {
+    try { handleServerMsg(JSON.parse(e.data)); } catch (_) {}
+  };
+}
+
+function setConn(ok) {
+  document.getElementById('connDot').className = 'conn-dot' + (ok ? ' ok' : '');
+  document.getElementById('connLabel').textContent = ok ? 'conectado' : 'reconectando...';
+}
+
+function handleServerMsg(msg) {
+  switch (msg.type) {
+    case 'log':        notify_log(msg.line); break;
+    case 'progress':   notify_progress(msg.idx, msg.total, msg.pasta_id, msg.status, msg.detail); break;
+    case 'done':       notify_done(msg); break;
+    case 'error':      alert('Erro: ' + msg.message); break;
+    case 'screenshot':       notify_screenshot(msg.pasta_id, msg.data, false); break;
+    case 'debug_screenshot': notify_screenshot(msg.label,   msg.data, true);  break;
+    case 'live_screenshot':  notify_live_screenshot(msg.pasta_id, msg.idx, msg.total, msg.data); break;
+    case 'pong':       /* heartbeat ack — sem ação */ break;
+  }
+}
+
+// ── Activity ───────────────────────────────────────────────────────────────
+let selectedActivity = null;
+let totalIds = 0;
+let okCount = 0, errCount = 0;
+let timerInterval = null, startTime = null;
+
+function selectActivity(act) {
+  selectedActivity = act;
+  document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-' + act).classList.add('selected');
+}
+
+// ── Spreadsheet upload ─────────────────────────────────────────────────────
+async function handleSpreadsheetFile(file) {
+  if (!file) return;
+  if (!sessionId) { alert('Aguarde a inicialização...'); return; }
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res = await fetch(`/api/upload-spreadsheet/${sessionId}`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!data.ok) { alert('Erro: ' + data.error); return; }
+    totalIds = data.total;
+    document.getElementById('fileInfo').style.display = 'flex';
+    document.getElementById('fileInfoText').textContent = `${data.filename} — ${data.total} ID(s) encontrado(s)`;
+    const pw = document.getElementById('previewWrap');
+    pw.classList.remove('hidden');
+    const prev = document.getElementById('previewIds');
+    prev.innerHTML = '';
+    (data.preview || []).forEach(id => {
+      const s = document.createElement('span');
+      s.style.cssText = 'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:4px 10px;font-size:12px;color:#93c5fd;font-family:Consolas,monospace;';
+      s.textContent = id;
+      prev.appendChild(s);
+    });
+    if (data.total > 5) {
+      const m = document.createElement('span');
+      m.style.cssText = 'font-size:12px;color:rgba(255,255,255,0.3);padding:4px 0;';
+      m.textContent = `+ ${data.total - 5} mais`;
+      prev.appendChild(m);
+    }
+  } catch (e) {
+    alert('Falha ao carregar planilha: ' + e);
+  }
+}
+
+// ── Document file upload ───────────────────────────────────────────────────
+async function handleDocFiles(files) {
+  if (!files || files.length === 0) return;
+  if (!sessionId) { alert('Aguarde a inicialização...'); return; }
+  const fd = new FormData();
+  for (const f of files) fd.append('files', f);
+  try {
+    const res = await fetch(`/api/upload-documents/${sessionId}`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('docFilesInfo').style.display = 'flex';
+      document.getElementById('docFilesText').textContent = `${data.count} arquivo(s) enviado(s) ao servidor`;
+    }
+  } catch (e) {
+    alert('Falha ao enviar arquivos: ' + e);
+  }
+}
+
+// ── Radios ─────────────────────────────────────────────────────────────────
+function setRadio(groupId, el) {
+  document.getElementById(groupId).querySelectorAll('.radio-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function togglePedidoOp(val) {
+  document.getElementById('pedidoEditarCfg').classList.toggle('hidden', val !== 'editar');
+  document.getElementById('notePedidoCriar').classList.toggle('hidden', val !== 'criar');
+}
+
+// ── Dynamic campos capa ────────────────────────────────────────────────────
+function renderCampos() {
+  const n = parseInt(document.getElementById('numCampos').value);
+  const wrap = document.getElementById('camposWrap');
+  wrap.innerHTML = '';
+  for (let i = 1; i <= n; i++) {
+    const sec = document.createElement('div');
+    sec.className = 'fields-section';
+    sec.style.marginBottom = '12px';
+    sec.innerHTML = `
+      <div class="fields-section-title">Campo ${i}</div>
+      <div>
+        <label class="field-label">Nome do campo no sistema</label>
+        <input type="text" id="nomeCampo${i}" placeholder="Ex: Advogado Responsável" style="margin-bottom:12px;">
+      </div>
+      <div class="field-row" style="margin-bottom:0;">
+        <div>
+          <label class="field-label">Value do campo</label>
+          <input type="text" id="valueCampo${i}" placeholder="Ex: Dr. João Silva" style="margin-bottom:0;">
+        </div>
+        <div>
+          <label class="field-label">Ou coluna da planilha</label>
+          <input type="text" id="colunaCampo${i}" placeholder="Ex: B (se variar por ID)" style="margin-bottom:0;">
+        </div>
+      </div>
+      <div class="field-hint" style="margin-top:8px;margin-bottom:0;">Preencha o <em>Value</em> para valor fixo, ou a <em>Coluna</em> se variar por linha.</div>`;
+    wrap.appendChild(sec);
+  }
+}
+
+// ── Build config ───────────────────────────────────────────────────────────
+function buildConfig() {
+  if (selectedActivity === 'capa') {
+    const n = parseInt(document.getElementById('numCampos').value);
+    const campos = [];
+    for (let i = 1; i <= n; i++) {
+      campos.push({
+        nome:   document.getElementById('nomeCampo' + i).value.trim(),
+        value:  document.getElementById('valueCampo' + i).value.trim() || null,
+        coluna: document.getElementById('colunaCampo' + i).value.trim() || null,
+      });
+    }
+    return { campos };
+  }
+  if (selectedActivity === 'prazos') {
+    return {
+      subtipo:     document.getElementById('subtipoPrazo').value.trim(),
+      prazo_tipo:  document.querySelector('input[name="prazoTipo"]:checked').value,
+      coluna_data: document.getElementById('colunaData').value.trim(),
+    };
+  }
+  if (selectedActivity === 'pedidos') {
+    const op = document.querySelector('input[name="pedidoOp"]:checked').value;
+    return {
+      operacao: op,
+      de:   document.getElementById('pedidoDe').value.trim(),
+      para: document.getElementById('pedidoPara').value.trim(),
+      colunas: {
+        tipo:       document.getElementById('colTipoPedido').value.trim(),
+        valor:      document.getElementById('colValorPedido').value.trim(),
+        data:       document.getElementById('colDataPedido').value.trim(),
+        valor_prov: document.getElementById('colValorProv').value.trim(),
+        risco:      document.getElementById('colRisco').value.trim(),
+        data_juros: document.getElementById('colDataJuros').value.trim(),
+      },
+    };
+  }
+  if (selectedActivity === 'documentos') {
+    const op = document.querySelector('input[name="docOp"]:checked').value;
+    if (op === 'upload') {
+      return {
+        operacao:       'upload',
+        tipo_documento: document.getElementById('tipoDocumento').value.trim(),
+      };
+    }
+    const prioridades = document.getElementById('prioridadesDownload').value
+      .split('\n').map(p => p.trim()).filter(p => p.length > 0);
+    return {
+      operacao:    'download',
+      prioridades: prioridades,
+      nome_modo:   'id',
+    };
+  }
+  if (selectedActivity === 'marcacao') {
+    const marcacoes = [...document.querySelectorAll('#marcacaoChecks input[type=checkbox]:checked')]
+      .map(c => c.value);
+    return { marcacoes };
+  }
+  return {};
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+let currentStep = 1;
+
+function showPanel(step) {
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel' + step).classList.add('active');
+
+  for (let i = 1; i <= 5; i++) {
+    const sn = document.getElementById('sn' + i);
+    sn.classList.remove('active','done');
+    if (i < step)      { sn.classList.add('done'); sn.textContent = '✓'; }
+    else if (i === step){ sn.classList.add('active'); sn.textContent = i; }
+    else                { sn.textContent = i; }
+  }
+  for (let i = 1; i <= 4; i++) {
+    const sl = document.getElementById('sl' + i);
+    sl.classList.remove('done','active');
+    if (i < step) sl.classList.add('done');
+    else if (i === step) sl.classList.add('active');
+  }
+
+  const fn = document.getElementById('footerNav');
+  if (step === 5) {
+    fn.innerHTML = `
+      <div></div><div></div>
+      <button class="btn btn-danger" onclick="stopExec()">■ Parar</button>`;
+    startExecution();
+    return;
+  }
+  fn.innerHTML = `
+    <button class="btn btn-ghost" id="btnBack" style="${step > 1 ? '' : 'display:none'}" onclick="goBack()">← Voltar</button>
+    <div></div>
+    <button class="btn btn-primary" id="btnNext" onclick="goNext()">${step === 4 ? '▶ Iniciar execução' : 'Próximo →'}</button>`;
+
+  if (step === 3 && selectedActivity) {
+    ['capa','prazos','pedidos','documentos','marcacao'].forEach(a =>
+      document.getElementById('cfg-' + a).classList.add('hidden'));
+    document.getElementById('cfg-' + selectedActivity).classList.remove('hidden');
+    if (selectedActivity === 'capa') renderCampos();
+  }
+
+  if (step === 4) {
+    const isDoc = selectedActivity === 'documentos';
+    const docOp = (document.querySelector('input[name="docOp"]:checked') || {}).value || 'upload';
+    document.getElementById('p4DocUpload').classList.toggle('hidden', !(isDoc && docOp === 'upload'));
+    document.getElementById('p4DocDownload').classList.toggle('hidden', !(isDoc && docOp === 'download'));
+    document.getElementById('p4LoginFull').classList.toggle('hidden', isDoc);
+    document.getElementById('p4LoginCompact').classList.toggle('hidden', !isDoc);
+  }
+}
+
+function goNext() {
+  if (!validate()) return;
+  if (currentStep < 5) { currentStep++; showPanel(currentStep); }
+}
+function goBack() {
+  if (currentStep > 1) { currentStep--; showPanel(currentStep); }
+}
+
+function validate() {
+  if (currentStep === 1 && !selectedActivity) {
+    alert('Selecione uma atividade para continuar.'); return false;
+  }
+  if (currentStep === 2 && totalIds === 0) {
+    alert('Carregue a planilha com os IDs antes de continuar.'); return false;
+  }
+  if (currentStep === 3 && selectedActivity === 'marcacao') {
+    const n = document.querySelectorAll('#marcacaoChecks input[type=checkbox]:checked').length;
+    if (n === 0) { alert('Selecione ao menos uma etiqueta de marcação.'); return false; }
+  }
+  if (currentStep === 4) {
+    if (!document.getElementById('loginUser').value.trim()) {
+      alert('Informe o usuário/e-mail de acesso.'); return false;
+    }
+    if (!document.getElementById('loginPass').value) {
+      alert('Informe a senha.'); return false;
+    }
+    if (!wsReady) {
+      alert('Sem conexão com o servidor. Aguarde reconectar.'); return false;
+    }
+  }
+  return true;
+}
+
+// ── Execution ──────────────────────────────────────────────────────────────
+function startExecution() {
+  okCount = 0; errCount = 0;
+  document.getElementById('execTbody').innerHTML = '';
+  document.getElementById('logArea').innerHTML = '';
+  document.getElementById('summaryPanel').classList.add('hidden');
+  document.getElementById('dlDocsBtn').classList.add('hidden');
+  document.getElementById('livePanel').style.display = 'none';
+  document.getElementById('liveImg').src = '';
+  document.getElementById('screenshotPanel').style.display = 'none';
+  document.getElementById('mTotal').textContent = totalIds;
+  document.getElementById('mOk').textContent = '0';
+  document.getElementById('mErr').textContent = '0';
+  document.getElementById('mTime').textContent = '00:00';
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('execHeading').textContent = 'Executando...';
+
+  startTime = Date.now();
+  timerInterval = setInterval(updateTimer, 1000);
+
+  ws.send(JSON.stringify({
+    type:     'start_run',
+    activity: selectedActivity,
+    config:   buildConfig(),
+    creds: {
+      user:     document.getElementById('loginUser').value.trim(),
+      password: document.getElementById('loginPass').value,
+    },
+  }));
+}
+
+function stopExec() {
+  if (ws && wsReady) ws.send(JSON.stringify({ type: 'stop_run' }));
+}
+
+// ── WS callbacks ───────────────────────────────────────────────────────────
+function notify_progress(idx, total, pastaId, status, detail) {
+  if (status === 'running') {
+    addRowRunning(idx, pastaId);
+  } else {
+    updateRow(idx, pastaId, status, detail);
+    if (status === 'ok') okCount++;
+    else if (status === 'error') errCount++;
+    document.getElementById('mOk').textContent = okCount;
+    document.getElementById('mErr').textContent = errCount;
+    document.getElementById('progressFill').style.width =
+      Math.round(((idx + 1) / total) * 100) + '%';
+  }
+}
+
+function notify_log(line) {
+  const la = document.getElementById('logArea');
+  const ts = new Date().toTimeString().slice(0, 8);
+  la.innerHTML += `<div>[${ts}] ${line}</div>`;
+  la.scrollTop = la.scrollHeight;
+}
+
+function notify_done(summary) {
+  finishExecutionUI(summary);
+}
+
+function addRowRunning(idx, id) {
+  const tbody = document.getElementById('execTbody');
+  let tr = document.getElementById('row-' + idx);
+  if (!tr) { tr = document.createElement('tr'); tr.id = 'row-' + idx; tbody.appendChild(tr); }
+  tr.innerHTML = `
+    <td class="num-cell">${idx + 1}</td>
+    <td class="id-cell">${id}</td>
+    <td><span class="status-badge running"><span class="dot-pulse"></span> running</span></td>
+    <td class="detail-cell">Processando...</td>`;
+  tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function updateRow(idx, id, status, detail) {
+  let tr = document.getElementById('row-' + idx);
+  if (!tr) { addRowRunning(idx, id); tr = document.getElementById('row-' + idx); }
+  const b = {
+    ok:    '<span class="status-badge ok">✓ sucesso</span>',
+    error: '<span class="status-badge error">✗ erro</span>',
+    skip:  '<span class="status-badge skip">⚠ pulado</span>',
+  }[status] || '<span class="status-badge skip">?</span>';
+  tr.innerHTML = `
+    <td class="num-cell">${idx + 1}</td>
+    <td class="id-cell">${id}</td>
+    <td>${b}</td>
+    <td class="detail-cell" title="${(detail||'').replace(/"/g,'&quot;')}">${detail}</td>`;
+}
+
+function updateTimer() {
+  const s = Math.floor((Date.now() - startTime) / 1000);
+  document.getElementById('mTime').textContent =
+    String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
+}
+
+function finishExecutionUI(summary) {
+  clearInterval(timerInterval);
+
+  document.getElementById('footerNav').innerHTML = `
+    <button class="btn btn-ghost" onclick="resetApp()">← Voltar ao início</button>
+    <div></div>
+    <button class="btn btn-primary" onclick="downloadReport()">📥 Baixar relatório</button>`;
+
+  const sp = document.getElementById('summaryPanel');
+  sp.classList.remove('hidden');
+  document.getElementById('sFinal').textContent   = summary.total || 0;
+  document.getElementById('sOkFinal').textContent  = summary.ok    || 0;
+  document.getElementById('sErrFinal').textContent = summary.error || 0;
+
+  if (summary.has_doc_download)
+    document.getElementById('dlDocsBtn').classList.remove('hidden');
+
+  if (summary.fatal_error) {
+    document.getElementById('summaryIcon').textContent = '❌';
+    document.getElementById('summaryTitle').textContent = 'Erro fatal';
+    document.getElementById('execHeading').textContent = 'Erro fatal';
+    document.getElementById('summarySubtitle').textContent = summary.fatal_error;
+  } else if (summary.login_error) {
+    document.getElementById('summaryIcon').textContent = '🔐';
+    document.getElementById('summaryTitle').textContent = 'Falha no login';
+    document.getElementById('execHeading').textContent = 'Login falhou';
+    document.getElementById('summarySubtitle').textContent = summary.login_error;
+  } else if (summary.stopped) {
+    document.getElementById('summaryIcon').textContent = '⚠️';
+    document.getElementById('summaryTitle').textContent = 'Execução interrompida';
+    document.getElementById('execHeading').textContent = 'Interrompido';
+    document.getElementById('summarySubtitle').textContent =
+      `Processados ${summary.total} de ${totalIds} registros.`;
+  } else if ((summary.error || 0) === 0) {
+    document.getElementById('summaryIcon').textContent = '✅';
+    document.getElementById('summaryTitle').textContent = 'Processamento concluído!';
+    document.getElementById('execHeading').textContent = 'Concluído';
+    document.getElementById('summarySubtitle').textContent = 'Todos os registros foram processados com sucesso.';
+  } else {
+    document.getElementById('summaryIcon').textContent = '⚠️';
+    document.getElementById('summaryTitle').textContent = 'Concluído com erros';
+    document.getElementById('execHeading').textContent = 'Concluído com erros';
+    document.getElementById('summarySubtitle').textContent =
+      `${summary.error} registro(s) com erro. Baixe o relatório para detalhes.`;
+  }
+}
+
+function notify_live_screenshot(pasta_id, idx, total, data) {
+  const panel = document.getElementById('livePanel');
+  document.getElementById('liveInfo').textContent = `ID ${pasta_id} — caso ${idx} de ${total}`;
+  document.getElementById('liveImg').src = 'data:image/png;base64,' + data;
+  panel.style.display = 'block';
+}
+
+function notify_screenshot(label, data, isDebug) {
+  const panel = document.getElementById('screenshotPanel');
+  const titleEl = panel.querySelector('div');
+  const infoEl  = document.getElementById('screenshotInfo');
+  if (isDebug) {
+    titleEl.textContent = '🔍 Screenshot de diagnóstico';
+    titleEl.style.color = 'rgba(100,200,255,0.9)';
+    infoEl.textContent  = label;
+  } else {
+    titleEl.textContent = '📸 Captura de tela do erro';
+    titleEl.style.color = 'rgba(255,165,0,0.8)';
+    infoEl.textContent  = `ID ${label} — captura no momento do erro`;
+  }
+  document.getElementById('screenshotImg').src = 'data:image/png;base64,' + data;
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function toggleLog() {
+  const la = document.getElementById('logArea');
+  la.classList.toggle('open');
+  document.getElementById('logArrow').textContent = la.classList.contains('open') ? '▼' : '▶';
+}
+
+function downloadReport() {
+  window.location.href = `/api/download-report/${sessionId}`;
+}
+
+function downloadDocs() {
+  window.location.href = `/api/download-docs/${sessionId}`;
+}
+
+function resetApp() {
+  selectedActivity = null; totalIds = 0; okCount = 0; errCount = 0;
+  document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('fileInfo').style.display = 'none';
+  document.getElementById('previewWrap').classList.add('hidden');
+  document.getElementById('livePanel').style.display = 'none';
+  document.getElementById('liveImg').src = '';
+  document.getElementById('screenshotPanel').style.display = 'none';
+  document.getElementById('docFilesInfo').style.display = 'none';
+  document.getElementById('docFilesText').textContent = 'arquivos carregados';
+  document.getElementById('fileInfoText').textContent = 'arquivo carregado';
+  document.getElementById('tipoDocumento').value = '';
+  document.getElementById('prioridadesDownload').value =
+    'Petição Inicial\nContestação\nHabilitação\nNotificação\nInicial\nPetição';
+  // Restaura docOp para upload
+  const uploadOpt = document.querySelector('input[name="docOp"][value="upload"]');
+  if (uploadOpt) {
+    uploadOpt.checked = true;
+    document.getElementById('rgDocOp').querySelectorAll('.radio-opt').forEach(o => o.classList.remove('selected'));
+    if (uploadOpt.closest('.radio-opt')) uploadOpt.closest('.radio-opt').classList.add('selected');
+  }
+  const lu = document.getElementById('loginUser');
+  const lp = document.getElementById('loginPass');
+  if (lu) lu.value = '';
+  if (lp) lp.value = '';
+  currentStep = 1;
+  showPanel(1);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+showPanel(1);
+renderCampos();
+initSession();
+</script>
+</body>
+</html>

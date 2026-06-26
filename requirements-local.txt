@@ -1,0 +1,5 @@
+# Dependências extras para uso local (desktop com Eel)
+eel>=0.16.0
+playwright>=1.45.0
+openpyxl>=3.1.2
+requests>=2.31.0
